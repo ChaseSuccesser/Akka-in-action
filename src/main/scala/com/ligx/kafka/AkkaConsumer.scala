@@ -1,6 +1,5 @@
 package com.ligx.kafka
 
-import java.util.Base64.Decoder
 import java.util.Properties
 
 import scala.concurrent.duration._
@@ -9,6 +8,7 @@ import akka.actor.{ActorContext, ActorRef, ActorSystem}
 import akka.util.Timeout
 import kafka.consumer.{ConsumerConfig, TopicFilter}
 import kafka.message.MessageAndMetadata
+import kafka.serializer.Decoder
 
 /**
   * Created by ligx on 16/6/17.
@@ -133,7 +133,7 @@ case class AkkaConsumerProps[Key, Msg](system: ActorSystem,
                                        connectorActorName: Option[String],
                                        maxInFlightPerStream: Int = 64,
                                        startTimeout: Timeout = Timeout(5 seconds),
-                                       commitTimeout: CommitConfig = CommitConfig())
+                                       commitConfig: CommitConfig = CommitConfig())
 
 case class CommitConfig(commitInterval: Option[FiniteDuration] = Some(10 seconds),
                         commitAfterMsgCount: Option[Int] = Some(10000),
