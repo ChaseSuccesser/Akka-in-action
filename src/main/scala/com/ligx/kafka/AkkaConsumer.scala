@@ -159,7 +159,7 @@ object AkkaConsumerProps {
 }
 
 // TODO TopicFilter
-// TODO ActorRefFactory
+// TODO ActorRefFactory   可以是ActorSystem实例  也可以是context
 case class AkkaConsumerProps[Key, Msg](system: ActorSystem,
                                        actorRefFactory: ActorRefFactory,
                                        zkConnect: String,
