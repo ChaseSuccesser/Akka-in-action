@@ -68,9 +68,6 @@ object StreamFSM {
 
 }
 
-//TODO 了解Event类(actor是怎么收到Event的,它的两个参数值是从哪来的)
-//TODO     个人理解:Event的第二个参数表示的是当前的状态数据. 而当前的状态数据可以使用using方法进行修改
-//TODO 了解stateTimeout的作用
 class ConnectorFSM[Key, Msg](props: AkkaConsumerProps[Key, Msg], connector: ConsumerConnector) extends Actor with FSM[ConnectorState, Int]{
   import props._
   import context.dispatcher
@@ -88,13 +85,11 @@ class ConnectorFSM[Key, Msg](props: AkkaConsumerProps[Key, Msg], connector: Cons
     case Event(Start, _) =>
       log.info("at=start")
       def startTopic(topic: String): Unit ={
-        // TODO ConsumerConnector的createMessageStrerams方法
         connector.createMessageStreams(Map(topic -> streams), keyDecoder, msgDecoder).apply(topic).zipWithIndex.foreach{
           case (stream, index) => context.actorOf(Props(new StreamFSM(stream, maxInFlightPerStream, receiver, msgHandler)), s"stream$index")
         }
       }
 
-      // TODO ConsumerConnector的createMessageStreamsByFilter方法
       def startTopicFilter(topicFilter: TopicFilter): Unit ={
         connector.createMessageStreamsByFilter(topicFilter, streams, keyDecoder, msgDecoder).zipWithIndex.foreach{
           case (stream, index) => context.actorOf(Props(new StreamFSM(stream, maxInFlightPerStream, receiver, msgHandler)), s"stream$index")

@@ -4,11 +4,15 @@ import java.util.Properties
 
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
-import akka.actor.{ActorContext, ActorRef, ActorSystem}
+import akka.actor.{ActorContext, ActorRef, ActorRefFactory, ActorSystem, Props}
 import akka.util.Timeout
-import kafka.consumer.{ConsumerConfig, TopicFilter}
+import kafka.consumer.{Consumer, ConsumerConfig, TopicFilter}
 import kafka.message.MessageAndMetadata
 import kafka.serializer.Decoder
+import akka.pattern.ask
+
+import scala.concurrent.Future
+
 
 /**
   * Created by ligx on 16/6/17.
@@ -22,12 +26,12 @@ object AkkaConsumer{
       }
     }
   }
-
-
 }
 
 class AkkaConsumer[Key, Msg](props: AkkaConsumerProps[Key, Msg]) {
   import AkkaConsumer._
+
+  lazy val connector = createConnection(props)
 
   /**
     * 根据zkConnect和groupId 以及配置文件中的kafka.consumer配置得到创建ConsumerConfig所需的Properties
@@ -38,20 +42,55 @@ class AkkaConsumer[Key, Msg](props: AkkaConsumerProps[Key, Msg]) {
   def kafkaConsumerProps(zkConnect: String, groupId: String) = {
     val consumerConfig = props.system.settings.config.getConfig("kafka.consumer")
     val consumerProps = consumerConfig.entrySet().asScala.map{
-      entry => entry.asInstanceOf[String] -> consumerConfig.getValue(entry.getKey).asInstanceOf[String]
+      entry => entry.getKey -> consumerConfig.getString(entry.getKey)
     } ++ Set("zookeeper.connect" -> zkConnect, "group.id" -> groupId)
     toProps(consumerProps)
   }
 
+  /**
+    * 由配置创建ZookeeperConsumerConnector实例
+    * @param zkConnect
+    * @param groupId
+    * @return
+    */
   def kafkaConsumer(zkConnect: String, groupId: String) = {
     Consumer.create(new ConsumerConfig(kafkaConsumerProps(zkConnect, groupId)))
   }
 
+  /**
+    * 创建ZookeeperConsumerConnector实例，创建ConnectorFSM实例
+    * @param props
+    * @return
+    */
   def createConnection(props: AkkaConsumerProps[Key, Msg]) = {
     import props._
     val consumerConfig = new ConsumerConfig(kafkaConsumerProps(zkConnect, group))
     val consumerConnector = Consumer.create(consumerConfig)
-    connectorActorName.map(name => actorRefFactory.actorOf())
+    connectorActorName.map{
+      name => actorRefFactory.actorOf(Props(new ConnectorFSM(props, consumerConnector)), name)
+    }.getOrElse(actorRefFactory.actorOf(Props(new ConnectorFSM(props, consumerConnector))))
+  }
+
+  /**
+    * 向ConnectorFSM的实例发送Started消息
+    * @return
+    */
+  def start(): Future[Unit] = {
+    import props.system.dispatcher
+    implicit val timeout = props.startTimeout
+    (connector ? ConnectorFSM.Start).map{started => props.system.log.info("at=consumer-started")}
+  }
+
+  def stop(): Future[Unit] = {
+    import props.system.dispatcher
+    implicit val timeout = props.startTimeout
+    connector ? ConnectorFSM.Stop map(stoped => props.system.log.info("at=consumer-stopped"))
+  }
+
+  def commit(): Future[Unit] = {
+    import props.system.dispatcher
+    implicit val timeout = props.commitConfig.commitTimeout
+    connector ? ConnectorFSM.Commit map(committed => props.system.log.info("at=consumer-committed"))
   }
 }
 
@@ -119,7 +158,8 @@ object AkkaConsumerProps {
   def defaultHandler[Key, Msg]: (MessageAndMetadata[Key, Msg]) => Any = msg => msg.message()
 }
 
-// TODO TopicFilter  MessageAndMetadata
+// TODO TopicFilter
+// TODO ActorRefFactory
 case class AkkaConsumerProps[Key, Msg](system: ActorSystem,
                                        actorRefFactory: ActorRefFactory,
                                        zkConnect: String,
