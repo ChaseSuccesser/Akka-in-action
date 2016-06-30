@@ -146,7 +146,6 @@ class ConnectorFSM[Key, Msg](props: AkkaConsumerProps[Key, Msg], connector: Cons
 
   onTransition{
     case Receiving -> Committing =>
-      // TODO FSM的stateData方法
       log.info("at=transition from={} to={} uncommitted={}", Receiving, Committing, stateData)
       commitTimeoutCancelable.foreach(_.cancel())
       context.children.foreach(_ ! Drain)
