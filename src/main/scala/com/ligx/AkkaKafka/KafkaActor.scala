@@ -17,26 +17,15 @@ case object NextMessage extends KafkaStreamDriverMessage
 case class TopicConfig(topic: String, numConsumerThread: Int)
 
 object KafkaActor{
-  def apply(actorSystem: ActorSystem,
-            zookeeper: String,
-            brokers: String,
-            groupId: String,
-            topicConfigs: Seq[TopicConfig],
-            consumerConfig: AkkaConsumerConfig = null,
-            producerConfig: AkkaProducerConfig = null) = {
-    val props = Props(new KafkaActor(zookeeper, brokers, groupId, topicConfigs, consumerConfig, producerConfig))
-    actorSystem.actorOf(props, "KafkaActor")
+  def apply(system: ActorSystem, topicConfigs: Seq[TopicConfig]) = {
+    val props = Props(new KafkaActor(system, topicConfigs))
+    system.actorOf(props, "KafkaActor")
   }
 }
 
-class KafkaActor(zookeeper: String,
-                 brokers: String,
-                 groupId: String,
-                 topicConfigs: Seq[TopicConfig],
-                 consumerConfig: AkkaConsumerConfig = null,
-                 producerConfig: AkkaProducerConfig = null) extends Actor {
+class KafkaActor private (system: ActorSystem, topicConfigs: Seq[TopicConfig]) extends Actor {
 
-  val akkaConsumer = new AkkaConsumer(if(consumerConfig==null) AkkaConsumerConfig(zookeeper, groupId) else consumerConfig.copy(zookeeper, groupId))
+  val akkaConsumer = new AkkaConsumer(system)
 
   val topicStreams = akkaConsumer.createMessageStreams(topicConfigs)
 

@@ -1,7 +1,8 @@
 package com.ligx.AkkaKafka
 
 import java.util.Properties
-
+import scala.collection.JavaConverters._
+import akka.actor.ActorSystem
 import kafka.utils.Logging
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
@@ -9,41 +10,24 @@ import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSeriali
 /**
   * Created by ligx on 16/7/7.
   */
-case class AkkaProducerConfig(brokers: String = null,
-                              clientId: String = null,
-                              compress: Boolean = true,
-                              batchSize: Int = 16384,
-                              maxSendRetries: Int = 2,
-                              acks: Integer = 1,
-                              bufferMemoryBytes: Long = 10*1024*1024,
-                              metadataFetchTimeoutMillis: Long = 1000
-                             ){
-  def validate = {
-    require(brokers != null, "null brokers")
-  }
-
-  def toProperties = new Properties(){
-    put("bootstrap.servers", brokers)
-    put("buffer.memory", bufferMemoryBytes.toString)                // default=33554432
-    put("retries", maxSendRetries.toString)                         // default=0
-    put("acks", acks.toString)                                      // default=1
-    put("compression.type", "gzip")                                 // default=none (none / gzip / snappy)
-    put("batch.size", batchSize.toString)                           // default=16384
-    put("key.serializer", classOf[StringSerializer].getName)
-    put("value.serializer", classOf[ByteArraySerializer].getName)
-    put("metadata.fetch.timeout.ms", metadataFetchTimeoutMillis.toString)
-    put("block.on.buffer.full", "false")
-    put("request.timeout.ms", 10000.toString)
-    if (clientId != null) put("client.id", clientId)
+object AkkaProducer{
+  def toProps(system: ActorSystem) = {
+    val config = system.settings.config.getConfig("kafka.producer")
+    val kvSet = config.entrySet().asScala.map(entry => entry.getKey -> config.getString(entry.getKey))
+    kvSet.foldLeft(new Properties()){
+      case (p, (k, v)) => {
+        p.put(k, v)
+        p
+      }
+    }
   }
 }
 
-class AkkaProducer(config: AkkaProducerConfig) extends Logging with Callback{
-  require(config != null, "null producer config")
+class AkkaProducer(system: ActorSystem) extends Logging with Callback{
 
-  config.validate
+  import AkkaProducer._
 
-  val producer = new KafkaProducer[String, Array[Byte]](config.toProperties)
+  val producer = new KafkaProducer[String, Array[Byte]](toProps(system))
 
   def send(topic: String, key: String, value: Array[Byte]) = {
     producer.send(new ProducerRecord[String, Array[Byte]](topic, key, value))

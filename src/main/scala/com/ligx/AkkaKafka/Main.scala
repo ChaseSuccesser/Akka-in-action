@@ -14,11 +14,7 @@ object Main extends App{
     TopicConfig(topic = "akka-topic2", numConsumerThread = 1)
   )
 
-  val zookeeper = "localhost:2181"
-  val brokers = null
-  val groupId = "akka-group"
-
-  val kafkaActor = KafkaActor(system, zookeeper, brokers, groupId, topicConfigs, null, null)
+  val kafkaActor = KafkaActor(system, topicConfigs)
 
   kafkaActor ! MessageReady
 }
