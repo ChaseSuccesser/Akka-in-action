@@ -10,7 +10,8 @@ object Main extends App{
   val system = ActorSystem("AkkaSystem")
 
   val topicConfigs = Seq(
-    TopicConfig(topic = "akka-topic", numConsumerThread = 1)
+    TopicConfig(topic = "akka-topic", numConsumerThread = 1),
+    TopicConfig(topic = "akka-topic2", numConsumerThread = 1)
   )
 
   val zookeeper = "localhost:2181"

@@ -2,6 +2,7 @@ package com.ligx.AkkaKafka
 
 import akka.actor.{Actor, ActorLogging}
 import kafka.consumer.{ConsumerTimeoutException, KafkaStream}
+import kafka.message.MessageAndMetadata
 
 /**
   * Created by ligx on 16/7/7.
@@ -14,7 +15,7 @@ class StreamActor(stream: KafkaStream[Array[Byte], Array[Byte]]) extends Actor w
     case RequestMessage =>
       try {
         if (streamIterator.hasNext()) {
-          processMessage(streamIterator.next().message)
+          processMessage(streamIterator.next())
           self ! RequestMessage
         } else {
           log.info("KafkaStream中没有消息")
@@ -36,8 +37,8 @@ class StreamActor(stream: KafkaStream[Array[Byte], Array[Byte]]) extends Actor w
       }
   }
 
-  def processMessage(msg: Array[Byte]) = {
-    println("收到消息: " + new String(msg))
+  def processMessage(result: MessageAndMetadata[Array[Byte], Array[Byte]]) = {
+    println(s"topic: ${result.topic}, partition: ${result.partition}, offset: ${result.offset}, message: " + new String(result.message()))
   }
 
   def notifySelf = self ! NextMessage
