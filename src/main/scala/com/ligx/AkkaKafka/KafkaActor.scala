@@ -1,5 +1,6 @@
 package com.ligx.AkkaKafka
 
+import scala.collection.JavaConverters._
 import akka.actor.{Actor, ActorSystem, Props}
 
 /**
@@ -40,8 +41,8 @@ class KafkaActor(zookeeper: String,
   val topicStreams = akkaConsumer.createMessageStreams(topicConfigs)
 
   val topicActors = for(topicConfig <- topicConfigs) yield{
-    val props = Props(classOf[TopicActor], topicConfig, topicStreams.get(topicConfig.topic))
-    context.actorOf(props, s"kafka-topic-${topicConfig.topic}")
+    val props = Props(classOf[TopicActor], topicConfig, topicStreams.get(topicConfig.topic).asScala)
+    context.actorOf(props, s"kafka-${topicConfig.topic}")
   }
 
   override def receive: Receive = {

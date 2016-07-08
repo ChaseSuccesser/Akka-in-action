@@ -12,7 +12,7 @@ import kafka.consumer.{Consumer, ConsumerConfig, KafkaStream}
 case class AkkaConsumerConfig(
                            zookeeper: String = null,
                            groupId : String = null,
-                           autoOffsetResetToStart: Boolean = false,
+                           autoOffsetResetToStart: Boolean = true,
                            consumerTimeoutMillis: Long = 500,
                            autoCommitIntervalMillis: Long = 10000
                          ){
