@@ -14,6 +14,7 @@ object AkkaConsumer{
 
   def toProps(system: ActorSystem) = {
     val config = system.settings.config.getConfig("kafka.consumer")
+    require(config!=null, "null kafka.consumer config")
     val kvSet = config.entrySet().asScala.map(entry => entry.getKey -> config.getString(entry.getKey))
     kvSet.foldLeft(new Properties()){
       case (p, (k, v)) => {
