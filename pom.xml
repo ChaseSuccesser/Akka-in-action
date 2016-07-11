@@ -56,6 +56,12 @@
       <artifactId>kafka_2.11</artifactId>
       <version>0.9.0.1</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>3.0.0-M15</version>
+    </dependency>
   </dependencies>
 
   <build>
