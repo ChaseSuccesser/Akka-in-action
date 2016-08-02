@@ -7,7 +7,11 @@ import scala.collection.mutable
 /**
   * Created by ligx on 16/6/18.
   */
-object Test extends FlatSpec with Matchers{
+class Test extends FlatSpec with Matchers{
+
+  assertResult(3){
+    3
+  }
 
   "An empty set" should "have size 0" in {
     val stack = new mutable.Stack[Int]
