@@ -12,7 +12,7 @@ class CustomMailType(setting: ActorSystem.Settings, config: Config) extends Mail
   override def create(owner: Option[ActorRef], system: Option[ActorSystem]): MessageQueue = {
     (owner, system) match {
       case (Some(a), Some(s)) =>
-        val mailbox = new CustomMailbpx
+        val mailbox = new CustomMailbox
         MailboxExtension(s).registerMailbox(a, mailbox)
         mailbox
       case _ => throw new Exception("no mailbox owner or system given")

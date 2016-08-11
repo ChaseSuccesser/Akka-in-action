@@ -8,7 +8,7 @@ import akka.dispatch.{Envelope, MessageQueue, UnboundedMailbox}
 /**
   * Created by ligx on 16/6/15.
   */
-class CustomMailbpx extends UnboundedMailbox.MessageQueue{
+class CustomMailbox extends UnboundedMailbox.MessageQueue{
 
   private val counter = new AtomicInteger
 

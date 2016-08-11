@@ -3,16 +3,16 @@ package com.ligx.extensions
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.{ActorContext, ActorRef, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
-import com.ligx.mailbox.CustomMailbpx
+import com.ligx.mailbox.CustomMailbox
 
 /**
   * Created by ligx on 16/6/15.
   */
 class MailboxExtensionImpl extends Extension{
 
-  private val mailMap = new ConcurrentHashMap[ActorRef, CustomMailbpx]()
+  private val mailMap = new ConcurrentHashMap[ActorRef, CustomMailbox]()
 
-  def registerMailbox(actorRef: ActorRef, mailbox: CustomMailbpx) = mailMap.put(actorRef, mailbox)
+  def registerMailbox(actorRef: ActorRef, mailbox: CustomMailbox) = mailMap.put(actorRef, mailbox)
 
   def ungisterMailbox(actorRef: ActorRef) = mailMap.remove(actorRef)
 
