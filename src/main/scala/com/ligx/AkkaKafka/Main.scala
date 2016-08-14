@@ -30,4 +30,5 @@ object Main extends App{
   val content = Map("strategy_type"->"pay", "order_id"->"11111", "action"->"hhaa").toJson.compactPrint
   producer.send("order", null, content)
   producer.close
+  system.terminate()
 }

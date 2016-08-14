@@ -27,5 +27,5 @@ class CustomMailbox extends UnboundedMailbox.MessageQueue{
     super.cleanUp(owner, deadLetters)
   }
 
-  def getMailboxSize(): Int = counter.get()
+  def getMailboxSize: Int = counter.get()
 }

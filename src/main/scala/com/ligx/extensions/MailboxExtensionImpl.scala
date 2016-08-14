@@ -16,7 +16,7 @@ class MailboxExtensionImpl extends Extension{
 
   def ungisterMailbox(actorRef: ActorRef) = mailMap.remove(actorRef)
 
-  def getMailboxSize(implicit context: ActorContext): Int = mailMap.get(context.self).getMailboxSize()
+  def getMailboxSize(implicit context: ActorContext): Int = mailMap.get(context.self).getMailboxSize
 }
 
 object MailboxExtension extends ExtensionId[MailboxExtensionImpl] with ExtensionIdProvider{
