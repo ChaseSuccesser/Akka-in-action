@@ -28,10 +28,10 @@ class AkkaProducer(system: ActorSystem) extends Logging with Callback{
 
   import AkkaProducer._
 
-  val producer = new KafkaProducer[String, Array[Byte]](toProps(system))
+  val producer = new KafkaProducer[String, String](toProps(system))
 
-  def send(topic: String, key: String, value: Array[Byte]) = {
-    producer.send(new ProducerRecord[String, Array[Byte]](topic, key, value))
+  def send(topic: String, key: String, value: String) = {
+    producer.send(new ProducerRecord[String, String](topic, key, value))
   }
 
   override def onCompletion(recordMetadata: RecordMetadata, e: Exception): Unit = {
