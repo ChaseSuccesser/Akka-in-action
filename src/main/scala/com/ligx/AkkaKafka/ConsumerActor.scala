@@ -1,10 +1,11 @@
 package com.ligx.AkkaKafka
 
-import scala.collection.JavaConverters._
 import akka.actor.{Actor, ActorSystem, Props}
 
+import scala.collection.JavaConverters._
+
 /**
-  * Created by ligx on 16/7/7.
+  * Created by Administrator on 2016/8/15.
   */
 sealed trait KafkaStreamDriverMessage
 
@@ -16,20 +17,27 @@ case object NextMessage extends KafkaStreamDriverMessage
 
 case class TopicConfig(topic: String, numConsumerThread: Int)
 
-object KafkaActor{
+object ConsumerActor {
   def apply(system: ActorSystem, topicConfigs: Seq[TopicConfig]) = {
-    val props = Props(new KafkaActor(system, topicConfigs))
-    system.actorOf(props, "KafkaActor")
+    val props = Props(classOf[ConsumerActor], system, topicConfigs)
+    system.actorOf(props)
   }
 }
 
-class KafkaActor private (system: ActorSystem, topicConfigs: Seq[TopicConfig]) extends Actor {
+class ConsumerActor private (system: ActorSystem, topicConfigs: Seq[TopicConfig]) extends Actor {
 
   val akkaConsumer = new AkkaConsumer(system)
 
   val topicStreams = akkaConsumer.createMessageStreams(topicConfigs)
 
-  val topicActors = for(topicConfig <- topicConfigs) yield{
+  /*
+                  ConsumerActor
+                  /           \
+              TopicActor   TopicActor  .....
+            /           \
+      StreamActor    StreamActor  .......
+   */
+  val topicActors = for(topicConfig <- topicConfigs) yield {
     val props = Props(classOf[TopicActor], topicConfig, topicStreams.get(topicConfig.topic).asScala)
     context.actorOf(props, s"kafka-${topicConfig.topic}")
   }
