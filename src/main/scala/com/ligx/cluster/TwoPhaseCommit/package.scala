@@ -38,9 +38,30 @@ package object TwoPhaseCommit {
 
   import Helper._
 
+  case class Process[T](rs: ReqSeq[T])
+  case class ReqSeq[T](tid: String, data: Seq[T])
+                      (implicit val merging: GetMerge[T] = default[T] _, val askTimeout: Timeout = Timeout(defaultTimeout))
+  case class Req[T](tid: String, body: T, seqNumber: Int)
+
+
+  trait Vote[T] {
+    def req: Req[T]
+    def isCommit: Boolean
+  }
+  case class Commit[T](req: Req[T]) extends Vote[T] {
+    def isCommit = true
+  }
+  case class Rollback[T](req: Req[T]) extends Vote[T] {
+    def isCommit = false
+  }
+
+
+
   trait Merging[T] {
     //see Helper.default for reference implementation
     def acc: Seq[T]
+
+    private[example] def transactionSize = acc.size
 
     //data accumulated at the moment
     def votes: Seq[Vote[T]]
@@ -51,9 +72,11 @@ package object TwoPhaseCommit {
     //all parts of chunked transaction received
     def mergeVotes = votes forall (_.isCommit) toOption Commit[T] _ getOrElse Rollback[T] _
 
-    private[example] def transactionSize = acc.size
-
     //expected transaction size
+    /*
+    如果没有收到全部参与者的响应,就返回None
+    如果收到的全部的参与者返回的响应中,有表示失败的,就返回None
+     */
     private[example] def apply = isFull toOption mergeVotes
 
     def chunkTimeout = None
@@ -63,29 +86,11 @@ package object TwoPhaseCommit {
 
 
 
-  case class Process[T](rs: ReqSeq[T])
-  case class ReqSeq[T](tid: String, data: Seq[T])
-                      (implicit val merging: GetMerge[T] = default[T] _, val askTimeout: Timeout = Timeout(defaultTimeout))
-  case class Req[T](tid: String, body: T, seqNumber: Int)
-
-
-
-
   trait Result
   object Success extends Result
   object Failure extends Result
 
 
-  trait Vote[T] {
-    def req: Req[T];
-    def isCommit: Boolean
-  }
-  case class Commit[T](req: Req[T]) extends Vote[T] {
-    def isCommit = true
-  }
-  case class Rollback[T](req: Req[T]) extends Vote[T] {
-    def isCommit = false
-  }
 
   case class Ack[T](vote: Vote[T])
 
