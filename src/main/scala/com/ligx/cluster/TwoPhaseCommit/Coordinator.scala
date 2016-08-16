@@ -33,6 +33,13 @@ abstract class Transactor[T, P <: Processor[T] : ClassTag] extends TransactorLik
       acc ++= p.rs.data
     case v: Vote[T] =>
       stat += sender -> v
+      /*
+      Merging类的apply方法的逻辑：
+      如果没有收到全部参与者的响应,就返回None
+      如果收到了全部参与者返回的响应
+        如果收到的全部的参与者返回的响应中,有表示失败的响应,就返回Rollback[T] _
+        如果收到的全部的参与者返回的响应中，都表示执行事务成功，则返回Commit[T] _
+     */
       for (newVote <- transact.merging(acc, votes).apply; (actor, vote) <- stat) actor ! newVote(vote.req)
     case a: Ack[T] =>
       stat -= stat.find(_._2.req == a.vote.req).get
@@ -55,7 +62,7 @@ trait Processor[T] extends ProcessorLike[T] {
   import context.dispatcher
 
   final def receive = {
-    case r: Req[T] => process(r) foreach (sender ! _) // 2 执行事务,向协调者发送Vote yes/no
+    case r: Req[T] => process(r) foreach (sender ! _) // 2 参与者收到Req，执行事务，向协调者发送Vote yes/no
     case o: Commit[T] => complete(o.req) map (_ => Ack(o)) foreach (sender ! _)
     case o: Rollback[T] => rollback(o.req) map (_ => Ack(o)) foreach (sender ! _)
   }

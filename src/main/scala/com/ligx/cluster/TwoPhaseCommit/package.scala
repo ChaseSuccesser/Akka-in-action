@@ -24,7 +24,7 @@ package object TwoPhaseCommit {
 
     case class expecting[T](override val transactionSize: Int)(val acc: Seq[T], val votes: Seq[Vote[T]]) extends Merging[T]
 
-    case class default[T] private[example] (acc: Seq[T], votes: Seq[Vote[T]]) extends Merging[T]
+    case class default[T] private[TwoPhaseCommit] (acc: Seq[T], votes: Seq[Vote[T]]) extends Merging[T]
 
     type GetMerge[T] = (Seq[T], Seq[Vote[T]]) => Merging[T]
 
@@ -63,7 +63,7 @@ package object TwoPhaseCommit {
     //see Helper.default for reference implementation
     def acc: Seq[T]
 
-    private[example] def transactionSize = acc.size
+    private[TwoPhaseCommit] def transactionSize = acc.size
 
     //data accumulated at the moment
     def votes: Seq[Vote[T]]
@@ -75,11 +75,7 @@ package object TwoPhaseCommit {
     def mergeVotes = votes forall (_.isCommit) toOption Commit[T] _ getOrElse Rollback[T] _
 
     //expected transaction size
-    /*
-    如果没有收到全部参与者的响应,就返回None
-    如果收到的全部的参与者返回的响应中,有表示失败的,就返回None
-     */
-    private[example] def apply = isFull toOption mergeVotes
+    private[TwoPhaseCommit] def apply = isFull toOption mergeVotes
 
     def chunkTimeout = None
 
@@ -97,9 +93,9 @@ package object TwoPhaseCommit {
   abstract class TransactorLike[T] extends Actor {
     import context.dispatcher
 
-    private[example] var transact: ReqSeq[T] = _
-    private[example] var parent: ActorRef = _     //we need it to correlate with last request, it's not context.parent
-    private[example] val acc = ListBuffer[T]()
+    private[TwoPhaseCommit] var transact: ReqSeq[T] = _
+    private[TwoPhaseCommit] var parent: ActorRef = _     //we need it to correlate with last request, it's not context.parent
+    private[TwoPhaseCommit] val acc = ListBuffer[T]()
 
     def commit = parent ! Success
 
@@ -108,9 +104,9 @@ package object TwoPhaseCommit {
     final def tid = self.path.name
 
     val orderBySeqNumber = Ordering.by[(ActorRef, Vote[T]), Int](_._2.req.seqNumber)
-    private[example] val stat = scala.collection.mutable.SortedSet[(ActorRef, Vote[T])]()(orderBySeqNumber)
+    private[TwoPhaseCommit] val stat = scala.collection.mutable.SortedSet[(ActorRef, Vote[T])]()(orderBySeqNumber)
 
-    private[example] def votes = stat.map(_._2).toSeq // voting
+    private[TwoPhaseCommit] def votes = stat.map(_._2).toSeq // voting
 
     def scheduleTimeouts(isFirstChunk: Boolean, merging: Merging[T]) = {
       // 5 seconds之后向自身发送Timeout消息
