@@ -56,6 +56,8 @@ package object TwoPhaseCommit {
   }
 
 
+  case class Ack[T](vote: Vote[T])
+
 
   trait Merging[T] {
     //see Helper.default for reference implementation
@@ -89,10 +91,6 @@ package object TwoPhaseCommit {
   trait Result
   object Success extends Result
   object Failure extends Result
-
-
-
-  case class Ack[T](vote: Vote[T])
 
 
 

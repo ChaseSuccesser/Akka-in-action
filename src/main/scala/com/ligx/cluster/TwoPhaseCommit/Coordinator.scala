@@ -41,6 +41,7 @@ abstract class Transactor[T, P <: Processor[T] : ClassTag] extends TransactorLik
         self ! PoisonPill
       }
     case "Timeout" =>
+      // 如果超时,并且收到了一些参与者发回的Vote,则对这些参与者发送rollback请求
       if (stat.nonEmpty) {
         for ((actor, vote) <- stat) actor ! Rollback(vote.req)
         rollback
