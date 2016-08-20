@@ -19,12 +19,12 @@ object Server extends App{
   implicit val executionContext = system.dispatcher
 
 
-//  val route =
-//    (path("order"/"hello") & get) {
-//      parameters("color", '){(color, count) =>
-//        complete(s"$color $count")
-//      }
-//    }
-//
-//  Http().bindAndHandle(route, interface = "localhost", port = 8888)
+  val route =
+    (path("order"/"hello") & get) {
+      parameters("color", 'count){(color, count) =>
+        complete(s"$color $count")
+      }
+    }
+
+  Http().bindAndHandle(route, interface = "localhost", port = 8888)
 }
