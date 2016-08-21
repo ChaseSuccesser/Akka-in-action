@@ -1,6 +1,6 @@
 package com.ligx.restapi.commons
 
-import spray.json.{JsFalse, JsNumber, JsString, JsTrue, JsValue, JsonFormat}
+import spray.json.{JsBoolean, JsNumber, JsString, JsValue, JsonFormat}
 
 /**
   * Created by ligx on 16/8/21.
@@ -11,15 +11,13 @@ object JsonUtil {
     def write(x: Any) = x match {
       case n: Int => JsNumber(n)
       case s: String => JsString(s)
-      case b: Boolean if b => JsTrue
-      case b: Boolean if !b => JsFalse
+      case b: Boolean => JsBoolean(b)
     }
 
     def read(value: JsValue) = value match {
-      case JsNumber(n) => n
+      case JsNumber(n) => n.intValue()
       case JsString(s) => s
-      case JsTrue => true
-      case JsFalse => false
+      case JsBoolean(f) => f
     }
   }
 }
