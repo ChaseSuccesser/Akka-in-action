@@ -1,6 +1,8 @@
 package com.ligx
 
+import com.ligx.restapi.commons.JsonUtil
 import org.scalatest.{FlatSpec, Matchers}
+import spray.json._
 
 import scala.collection.mutable
 
@@ -8,6 +10,8 @@ import scala.collection.mutable
   * Created by ligx on 16/6/18.
   */
 class Test extends FlatSpec with Matchers{
+  import DefaultJsonProtocol._
+  import JsonUtil.AnyJsonFormat
 
   assertResult(3){
     3
@@ -26,5 +30,11 @@ class Test extends FlatSpec with Matchers{
     a [NoSuchElementException] should be thrownBy {
       enptyStack.pop()
     }
+  }
+
+  "An map result" should "convert json String" in {
+    val map = Map[String, Any]()
+    val new_map = map + ("is_success" -> true, "count" -> 2)
+    println(new_map.toJson.prettyPrint)
   }
 }
