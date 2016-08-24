@@ -24,6 +24,16 @@ object Server extends App{
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
+  implicit def exceptionHandler: ExceptionHandler = {
+    ExceptionHandler {
+      case e: RestException =>
+        extractRequest { request =>
+          val map = Map[String, Any]()
+          val responseMap = map + {"error" -> e.error, "method" -> request.method, "uri" -> request.uri, "detail" -> e.message}
+          complete(CommonResult.mapCommonResult(responseMap))
+        }
+    }
+  }
 
   val route =
     pathPrefix("order") {
