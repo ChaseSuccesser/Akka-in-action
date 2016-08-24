@@ -9,7 +9,10 @@ import akka.stream.ActorMaterializer
 import spray.json.DefaultJsonProtocol
 import spray.json._
 import ParameterDirectives.ParamMagnet
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.MessageEntity
 import com.ligx.restapi.commons.CommonResult
+import com.sun.xml.internal.ws.util.Pool.Marshaller
 
 /**
   * Created by Administrator on 2016/8/4.
@@ -34,6 +37,11 @@ object Server extends App{
         parameterMap { parameterMap =>
           def queryParamsString(params: (String, String)): String = s"${params._1} = ${params._2}"
           complete(s"get request parameters are: ${parameterMap.map(queryParamsString).mkString(", ")}")
+        }
+      } ~
+      (path("ping") & get) {
+        parameterMap { parameterMap =>
+          complete(Marshal("pong").to[MessageEntity])
         }
       }
     } ~
