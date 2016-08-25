@@ -11,8 +11,11 @@ import spray.json._
 import ParameterDirectives.ParamMagnet
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.MessageEntity
+import akka.http.scaladsl.server.ExceptionHandler
 import com.ligx.restapi.commons.CommonResult
+import com.ligx.restapi.exception.{ParamError, RestException}
 import com.sun.xml.internal.ws.util.Pool.Marshaller
+import scala.collection.mutable
 
 /**
   * Created by Administrator on 2016/8/4.
@@ -28,9 +31,11 @@ object Server extends App{
     ExceptionHandler {
       case e: RestException =>
         extractRequest { request =>
-          val map = Map[String, Any]()
-          val responseMap = map + {"error" -> e.error, "method" -> request.method, "uri" -> request.uri, "detail" -> e.message}
-          complete(CommonResult.mapCommonResult(responseMap))
+          val map = mutable.Map[String, Any]()
+          val restExceptionFactor = e.restExceptionFactor
+          map ++= List("error_code" -> restExceptionFactor.error_code, "request_method" -> request.method, "request_uri" -> request.uri, "detail_msg" -> restExceptionFactor.detail_msg)
+          val immutableMap = Map.empty[String, Any] ++ map
+          complete(CommonResult.mapCommonResult(immutableMap))
         }
     }
   }
@@ -53,6 +58,9 @@ object Server extends App{
         parameterMap { parameterMap =>
           complete(Marshal("pong").to[MessageEntity])
         }
+      } ~
+      (path("test_exception") & get) {
+        failWith(new RestException(ParamError))
       }
     } ~
     (pathPrefix("pay") & get) {
