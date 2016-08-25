@@ -10,11 +10,12 @@ import spray.json.DefaultJsonProtocol
 import spray.json._
 import ParameterDirectives.ParamMagnet
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.MessageEntity
+import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode}
 import akka.http.scaladsl.server.ExceptionHandler
 import com.ligx.restapi.commons.CommonResult
 import com.ligx.restapi.exception.{ParamError, RestException}
 import com.sun.xml.internal.ws.util.Pool.Marshaller
+
 import scala.collection.mutable
 
 /**
@@ -27,16 +28,23 @@ object Server extends App{
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
+  def overwriteResultStatus(http_code: Int)(response: HttpResponse): HttpResponse = {
+    response.copy(http_code)
+  }
+
   implicit def exceptionHandler: ExceptionHandler = {
     ExceptionHandler {
       case e: RestException =>
-        extractRequest { request =>
-          val map = mutable.Map[String, Any]()
-          val restExceptionFactor = e.restExceptionFactor
-          map ++= List("error_code" -> restExceptionFactor.error_code, "request_method" -> request.method, "request_uri" -> request.uri, "detail_msg" -> restExceptionFactor.detail_msg)
-          val immutableMap = Map.empty[String, Any] ++ map
-          complete(CommonResult.mapCommonResult(immutableMap))
-        }
+        val restExceptionFactor = e.restExceptionFactor
+
+        mapResponse(overwriteResultStatus(restExceptionFactor.http_code))(
+          extractRequest { request =>
+            val map = mutable.Map[String, Any]()
+            map ++= List("error_code" -> restExceptionFactor.error_code, "request_method" -> request.method.name(), "request_uri" -> request.uri.path.toString(), "detail_msg" -> restExceptionFactor.detail_msg)
+            val immutableMap = Map.empty[String, Any] ++ map
+            complete(CommonResult.mapCommonResult(immutableMap))
+          }
+        )
     }
   }
 
