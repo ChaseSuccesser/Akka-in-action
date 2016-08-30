@@ -14,15 +14,21 @@ import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode}
 import akka.http.scaladsl.server.ExceptionHandler
 import com.ligx.restapi.commons.CommonResult
 import com.ligx.restapi.exception.{ParamError, RestException}
-import com.sun.xml.internal.ws.util.Pool.Marshaller
 
 import scala.collection.mutable
 
 /**
   * Created by Administrator on 2016/8/4.
   */
+case class Person(name: String, age: Int)
+
+object PersonJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val personJsonFormat = jsonFormat2(Person)
+}
+
 object Server extends App{
 
+  import PersonJsonProtocol._
 
   implicit val system = ActorSystem("webserver")
   implicit val materializer = ActorMaterializer()
@@ -66,6 +72,9 @@ object Server extends App{
         parameterMap { parameterMap =>
           complete(Marshal("pong").to[MessageEntity])
         }
+      } ~
+      (path("get_person_info.json") & get) {
+        complete(Person("ligx", 23))
       } ~
       (path("test_exception") & get) {
         failWith(new RestException(ParamError))
