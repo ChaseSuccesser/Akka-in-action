@@ -23,8 +23,9 @@ object Main extends App{
 
   /*start producer*/
 //  import DefaultJsonProtocol._
+//  import com.ligx.restapi.commons.JsonUtil._
 //  val producer = new AkkaProducer(system)
-//  val content = Map("strategy_type"->"pay", "order_id"->"11111", "action"->"hhaa").toJson.compactPrint
+//  val content = Map("strategy_type"->"pay", "order_id"->11111, "action"->"hhaa").toJson.compactPrint
 //  producer.send("order", null, content)
 //  producer.close
 //  system.terminate()
