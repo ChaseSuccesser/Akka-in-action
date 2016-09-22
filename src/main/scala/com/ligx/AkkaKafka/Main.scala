@@ -10,23 +10,28 @@ object Main extends App{
 
   val system = ActorSystem("AkkaSystem")
 
-  /* start consumer*/
+  /* consumer start */
   val topicConfigs = Seq(
-//    TopicConfig(topic = "akka-topic", numConsumerThread = 1),
-//    TopicConfig(topic = "akka-topic2", numConsumerThread = 1)
     TopicConfig(topic = "order", numConsumerThread = 1)
   )
 
   val consumerActor = ConsumerActor(system, topicConfigs)
   consumerActor ! MessageReady
+  /* consumer end */
 
 
-  /*start producer*/
+  /* producer start */
 //  import DefaultJsonProtocol._
 //  import com.ligx.restapi.commons.JsonUtil._
 //  val producer = new AkkaProducer(system)
-//  val content = Map("strategy_type"->"pay", "order_id"->11111, "action"->"hhaa").toJson.compactPrint
-//  producer.send("order", null, content)
+//
+//  val content = Map("strategy_type"->"sync_order", "order_id"->18559304836477l, "action"->"create_order").toJson.compactPrint
+//  val appId = 23
+//  val sign = "J8@dC!3g"
+//  val message = s"$appId $sign CUSTOM $content"
+//
+//  producer.send("order", null, message)
 //  producer.close
 //  system.terminate()
+  /* producer end */
 }
