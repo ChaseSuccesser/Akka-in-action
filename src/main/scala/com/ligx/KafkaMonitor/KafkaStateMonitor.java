@@ -15,7 +15,6 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
-import org.fusesource.jansi.Ansi;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -26,13 +25,14 @@ public class KafkaStateMonitor implements Watcher {
   private CountDownLatch latch = new CountDownLatch(1);
   private ZooKeeper zk = null;
 
-  private KafkaStateMonitor() {
+  public KafkaStateMonitor() {
     init();
   }
 
   private void init() {
     try {
-      zk = new ZooKeeper("ukafka-u5qna5-1-bj03.service.ucloud.cn:2181", 500000, this);
+      //zk = new ZooKeeper("ukafka-u5qna5-1-bj03.service.ucloud.cn:2181", 500000, this);
+      zk = new ZooKeeper("localhost:2181", 500000, this);
 
       if (zk.getState() == States.CONNECTING) {
         try {
@@ -46,7 +46,7 @@ public class KafkaStateMonitor implements Watcher {
     }
   }
 
-  private void close() {
+  public void close() {
     try {
       zk.close();
     } catch (InterruptedException e) {
@@ -90,7 +90,11 @@ public class KafkaStateMonitor implements Watcher {
         brokerInfo.put(brokerId, new String(bytes));
       }
     }
-    return brokerInfo.size() > 0 ? brokerInfo : new HashMap<>();
+    return brokerInfo;
+  }
+
+  public String getBrokerInfoForApi() throws KeeperException, InterruptedException {
+    return JSON.toJSONString(getBrokerInfo(), true);
   }
 
   /**
@@ -105,13 +109,17 @@ public class KafkaStateMonitor implements Watcher {
         topicInfo.put(topic, new String(bytes));
       }
     }
-    return topicInfo.size() > 0 ? topicInfo : new HashMap<>();
+    return topicInfo;
+  }
+
+  public String getTopicInfoForApi() throws KeeperException, InterruptedException {
+    return JSON.toJSONString(getTopicInfo(), true);
   }
 
   /**
    * 获取每个Topic下所有Partition状态信息
    */
-  private Map<String, Map<String, String>> getPartitionInfo()
+  public Map<String, Map<String, String>> getTopicPartitionInfo()
       throws KeeperException, InterruptedException {
     Map<String, Map<String, String>> topicPartitionInfo = new HashMap<String, Map<String, String>>();
     // 所有的topic
@@ -136,13 +144,17 @@ public class KafkaStateMonitor implements Watcher {
         topicPartitionInfo.put(topic, partitionInfo);
       }
     }
-    return !topicPartitionInfo.isEmpty() ? topicPartitionInfo : new HashMap<>();
+    return topicPartitionInfo;
+  }
+
+  public String getTopicPartitionInfoForApi() throws KeeperException, InterruptedException {
+    return JSON.toJSONString(getTopicPartitionInfo(), true);
   }
 
   /**
    * 获取每个ConsumerGroup中的Consumer注册信息
    */
-  public Map<String, Map<String, String>> getConsumerInfo()
+  public Map<String, Map<String, String>> getGroupConsumerInfo()
       throws KeeperException, InterruptedException {
     Map<String, Map<String, String>> cgConsumersInfo = new HashMap<String, Map<String, String>>();
 
@@ -162,13 +174,17 @@ public class KafkaStateMonitor implements Watcher {
         cgConsumersInfo.put(groupId, consumerInfo);
       }
     }
-    return cgConsumersInfo.size() > 0 ? cgConsumersInfo : new HashMap<>();
+    return cgConsumersInfo;
+  }
+
+  public String getGroupConsumerInfoForApi() throws KeeperException, InterruptedException {
+    return JSON.toJSONString(getGroupConsumerInfo(), true);
   }
 
   /**
    * 获取每个Topic下所有Partition中被某个ConsumerGroup中的消费者消费的最大偏移量offset
    */
-  public List<GroupTopicMessageOffset> getPartitionOffsetInfo()
+  private List<GroupTopicMessageOffset> getPartitionOffsetInfo()
       throws KeeperException, InterruptedException {
     List<GroupTopicMessageOffset> topicPartitionMessageOffsetInfo = new ArrayList<GroupTopicMessageOffset>();
     // 所有的Consumer Group
@@ -200,21 +216,21 @@ public class KafkaStateMonitor implements Watcher {
   }
 
   /**
-   * 利用Consumner均衡算法，计算得到每个Consumer与之对应的Partition
+   * 利用Consumer均衡算法，计算得到每个Consumer与之对应的Partition
    */
-  public List<Consumer2Partition> getConsumerPartition()
+  private List<Consumer2Partition> getConsumerPartition()
       throws KeeperException, InterruptedException {
     List<Consumer2Partition> c2pL = new ArrayList<Consumer2Partition>();
 
-    Map<String, Map<String, String>> consumerInfo = getConsumerInfo();
-    Map<String, Map<String, String>> partitionInfo = getPartitionInfo();
+    Map<String, Map<String, String>> groupConsumerInfo = getGroupConsumerInfo();
+    Map<String, Map<String, String>> topicPartitionInfo = getTopicPartitionInfo();
 
-    for (Map.Entry<String, Map<String, String>> cgConsumerME : consumerInfo.entrySet()) {
+    for (Map.Entry<String, Map<String, String>> cgConsumerME : groupConsumerInfo.entrySet()) {
       // 指定Consumer Group下，Consumer的数量
       String groupId = cgConsumerME.getKey();
       double consumerCount = cgConsumerME.getValue().size();
 
-      for (Map.Entry<String, Map<String, String>> me : partitionInfo.entrySet()) {
+      for (Map.Entry<String, Map<String, String>> me : topicPartitionInfo.entrySet()) {
         // 指定Topic下Partition数量
         String topic = me.getKey();
         double partitionCount = me.getValue().size();
@@ -222,16 +238,64 @@ public class KafkaStateMonitor implements Watcher {
         //Partition数量与Consumer数比值(向上取整)
         int m = (int) Math.ceil(partitionCount / consumerCount);
 
-        for (int i = 0; i < consumerCount; i++) {
-          int startP = i * m;
-          int endP = (i + 1) * m - 1;
+        for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++) {
+          int startP = consumerIndex * m;
+          int endP = (consumerIndex + 1) * m - 1;
           //groupId消费组中第i个Consumer消费topic中的startP到endP
-          Consumer2Partition c2p = new Consumer2Partition(groupId, i, topic, startP, endP);
+          Consumer2Partition c2p = new Consumer2Partition(groupId, consumerIndex, topic, startP, endP);
           c2pL.add(c2p);
         }
       }
     }
     return c2pL.size() > 0 ? c2pL : new ArrayList<>();
+  }
+
+  /**
+   * 利用上面得到的数据，计算每个consumer的消费信息
+   * @return
+     */
+  public List<String> getConsumerOffset() throws KeeperException, InterruptedException {
+    // 获取每个Topic下所有Partition中被某个ConsumerGroup中的消费者消费的最大偏移量offset
+    List<GroupTopicMessageOffset> topicPartitionMessageOffsetInfo = getPartitionOffsetInfo();
+    // 每个Consumer与之对应的Partition
+    List<Consumer2Partition> c2pL = getConsumerPartition();
+    List<String> result = new ArrayList<>();
+
+    for (GroupTopicMessageOffset gtmo : topicPartitionMessageOffsetInfo) {
+      boolean hasConsumerForCGAndTopic = false;
+
+      for (Consumer2Partition c2p : c2pL) {
+        // 找到消费指定Topic并且在指定CG中的Consumer
+        if (c2p.getG().equals(gtmo.getGroup()) && c2p.getTopic().equals(gtmo.getTopic())) {
+          hasConsumerForCGAndTopic = true;
+          int lookupP = Integer.parseInt(gtmo.getPartition());
+          int startP = c2p.getStartP();
+          int endP = c2p.getEndP();
+          if ((lookupP > startP && lookupP < endP) || lookupP == startP || lookupP == endP) {
+            result.add(
+                    ColorUtil.white("消费组【") + ColorUtil.green(c2p.getG()) +
+                            ColorUtil.white("】的【") + ColorUtil.red("消费者 " + String.valueOf(c2p.getC())) +
+                            ColorUtil.white("】在topic【") + ColorUtil.blue(c2p.getTopic()) +
+                            ColorUtil.white("】的【") + ColorUtil.yellow("partition " + String.valueOf(lookupP)) +
+                            ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
+          }
+        }
+      }
+
+      if (!hasConsumerForCGAndTopic) {
+        result.add(
+                ColorUtil.white("消费组【") + ColorUtil.green(gtmo.getGroup()) +
+                        ColorUtil.white("】的【") + ColorUtil.red("None") +
+                        ColorUtil.white("】在topic【") + ColorUtil.blue(gtmo.getTopic()) +
+                        ColorUtil.white("】的【") + ColorUtil.yellow("partition " + gtmo.getPartition()) +
+                        ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
+      }
+    }
+    return result;
+  }
+
+  public String getConsumerOffsetInfoForApi() throws KeeperException, InterruptedException {
+    return JSON.toJSONString(getConsumerOffset(), true);
   }
 
 
@@ -254,7 +318,7 @@ public class KafkaStateMonitor implements Watcher {
 
     System.out.println("---------------partition信息---------------");
 
-    Map<String, Map<String, String>> topicPartitionInfo = monitor.getPartitionInfo();
+    Map<String, Map<String, String>> topicPartitionInfo = monitor.getTopicPartitionInfo();
     for (Map.Entry<String, Map<String, String>> me : topicPartitionInfo.entrySet()) {
       System.out.println(me.getKey());
       for (Map.Entry<String, String> m : me.getValue().entrySet()) {
@@ -264,7 +328,7 @@ public class KafkaStateMonitor implements Watcher {
 
     System.out.println("---------------consumer信息---------------");
 
-    Map<String, Map<String, String>> cgConsumersInfo = monitor.getConsumerInfo();
+    Map<String, Map<String, String>> cgConsumersInfo = monitor.getGroupConsumerInfo();
     for (Map.Entry<String, Map<String, String>> me : cgConsumersInfo.entrySet()) {
       System.out.println("消费组: " + me.getKey());
       for (Map.Entry<String, String> m : me.getValue().entrySet()) {
@@ -275,42 +339,9 @@ public class KafkaStateMonitor implements Watcher {
 
     System.out.println("----------------consumer与offset信息--------------");
 
-    // 获取每个Topic下所有Partition中被某个ConsumerGroup中的消费者消费的最大偏移量offset
-    List<GroupTopicMessageOffset> topicPartitionMessageOffsetInfo = monitor
-        .getPartitionOffsetInfo();
-    // 每个Consumer与之对应的Partition
-    List<Consumer2Partition> c2pL = monitor.getConsumerPartition();
+    List<String> consumerOffsetList = monitor.getConsumerOffset();
+    consumerOffsetList.forEach(System.out::println);
 
-    for (GroupTopicMessageOffset gtmo : topicPartitionMessageOffsetInfo) {
-      boolean hasConsumerForCGAndTopic = false;
-
-      for (Consumer2Partition c2p : c2pL) {
-        // 找到消费指定Topic并且在指定CG中的Consumer
-        if (c2p.getG().equals(gtmo.getGroup()) && c2p.getTopic().equals(gtmo.getTopic())) {
-          hasConsumerForCGAndTopic = true;
-          int lookupP = Integer.parseInt(gtmo.getPartition());
-          int startP = c2p.getStartP();
-          int endP = c2p.getEndP();
-          if ((lookupP > startP && lookupP < endP) || lookupP == startP || lookupP == endP) {
-            System.out.println(
-                ColorUtil.white("消费组【") + ColorUtil.green(c2p.getG()) +
-                ColorUtil.white("】的【") + ColorUtil.red("消费者 " + String.valueOf(c2p.getC())) +
-                ColorUtil.white("】在topic【") + ColorUtil.blue(c2p.getTopic()) +
-                ColorUtil.white("】的【") + ColorUtil.yellow("partition " + String.valueOf(lookupP)) +
-                ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
-          }
-        }
-      }
-
-      if (!hasConsumerForCGAndTopic) {
-        System.out.println(
-            ColorUtil.white("消费组【") + ColorUtil.green(gtmo.getGroup()) +
-            ColorUtil.white("】的【") + ColorUtil.red("None") +
-            ColorUtil.white("】在topic【") + ColorUtil.blue(gtmo.getTopic()) +
-            ColorUtil.white("】的【") + ColorUtil.yellow("partition " + gtmo.getPartition()) +
-            ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
-      }
-    }
 
 
     monitor.close();

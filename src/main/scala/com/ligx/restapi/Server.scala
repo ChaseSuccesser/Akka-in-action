@@ -8,10 +8,10 @@ import akka.http.scaladsl.server.directives.ParameterDirectives
 import akka.stream.ActorMaterializer
 import spray.json.DefaultJsonProtocol
 import spray.json._
-import ParameterDirectives.ParamMagnet
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode}
 import akka.http.scaladsl.server.ExceptionHandler
+import com.ligx.KafkaMonitor.KafkaStateMonitor
 import com.ligx.restapi.commons.CommonResult
 import com.ligx.restapi.exception.{ParamError, RestException}
 
@@ -80,12 +80,36 @@ object Server extends App{
         failWith(new RestException(ParamError))
       }
     } ~
-    (pathPrefix("pay") & get) {
-      parameterMap { paramsMap =>
-        def paramString(param: (String, String)): String = {
-          s"${param._1} = ${param._2}"
-        }
-        complete(s"${paramsMap.map(paramString).mkString(",")}")
+    pathPrefix("kafka") {
+      (path("get_brokers.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val brokersInfo = monitor.getBrokerInfoForApi()
+        monitor.close()
+        complete(brokersInfo)
+      } ~
+      (path("get_topics.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val topicsInfo = monitor.getTopicInfoForApi()
+        monitor.close()
+        complete(topicsInfo)
+      } ~
+      (path("get_topic_partitions.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val topicPartitionsInfo = monitor.getTopicPartitionInfoForApi()
+        monitor.close()
+        complete(topicPartitionsInfo)
+      } ~
+      (path("get_group_consumers.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val groupConsumersInfo = monitor.getGroupConsumerInfoForApi()
+        monitor.close()
+        complete(groupConsumersInfo)
+      } ~
+      (path("get_consumer_offset.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val consumerOffsetInfo = monitor.getConsumerOffsetInfoForApi()
+        monitor.close()
+        complete(consumerOffsetInfo.toJson)
       }
     }
 
