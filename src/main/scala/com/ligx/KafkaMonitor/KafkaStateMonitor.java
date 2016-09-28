@@ -242,7 +242,8 @@ public class KafkaStateMonitor implements Watcher {
           int startP = consumerIndex * m;
           int endP = (consumerIndex + 1) * m - 1;
           //groupId消费组中第i个Consumer消费topic中的startP到endP
-          Consumer2Partition c2p = new Consumer2Partition(groupId, consumerIndex, topic, startP, endP);
+          Consumer2Partition c2p = new Consumer2Partition(groupId, consumerIndex, topic, startP,
+              endP);
           c2pL.add(c2p);
         }
       }
@@ -252,8 +253,7 @@ public class KafkaStateMonitor implements Watcher {
 
   /**
    * 利用上面得到的数据，计算每个consumer的消费信息
-   * @return
-     */
+   */
   public List<String> getConsumerOffset() throws KeeperException, InterruptedException {
     // 获取每个Topic下所有Partition中被某个ConsumerGroup中的消费者消费的最大偏移量offset
     List<GroupTopicMessageOffset> topicPartitionMessageOffsetInfo = getPartitionOffsetInfo();
@@ -272,23 +272,21 @@ public class KafkaStateMonitor implements Watcher {
           int startP = c2p.getStartP();
           int endP = c2p.getEndP();
           if ((lookupP > startP && lookupP < endP) || lookupP == startP || lookupP == endP) {
-            result.add(
-                    ColorUtil.white("消费组【") + ColorUtil.green(c2p.getG()) +
-                            ColorUtil.white("】的【") + ColorUtil.red("消费者 " + String.valueOf(c2p.getC())) +
-                            ColorUtil.white("】在topic【") + ColorUtil.blue(c2p.getTopic()) +
-                            ColorUtil.white("】的【") + ColorUtil.yellow("partition " + String.valueOf(lookupP)) +
-                            ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
+            result.add(ColorUtil.white("消费组【") + ColorUtil.green(c2p.getG()) +
+                ColorUtil.white("】的【") + ColorUtil.red("消费者 " + String.valueOf(c2p.getC())) +
+                ColorUtil.white("】在topic【") + ColorUtil.blue(c2p.getTopic()) +
+                ColorUtil.white("】的【") + ColorUtil.yellow("partition " + String.valueOf(lookupP)) +
+                ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
           }
         }
       }
 
       if (!hasConsumerForCGAndTopic) {
-        result.add(
-                ColorUtil.white("消费组【") + ColorUtil.green(gtmo.getGroup()) +
-                        ColorUtil.white("】的【") + ColorUtil.red("None") +
-                        ColorUtil.white("】在topic【") + ColorUtil.blue(gtmo.getTopic()) +
-                        ColorUtil.white("】的【") + ColorUtil.yellow("partition " + gtmo.getPartition()) +
-                        ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
+        result.add(ColorUtil.white("消费组【") + ColorUtil.green(gtmo.getGroup()) +
+            ColorUtil.white("】的【") + ColorUtil.red("None") +
+            ColorUtil.white("】在topic【") + ColorUtil.blue(gtmo.getTopic()) +
+            ColorUtil.white("】的【") + ColorUtil.yellow("partition " + gtmo.getPartition()) +
+            ColorUtil.white("】上消费的偏移量为") + ColorUtil.yellow(gtmo.getMessageOffset()));
       }
     }
     return result;
@@ -341,7 +339,6 @@ public class KafkaStateMonitor implements Watcher {
 
     List<String> consumerOffsetList = monitor.getConsumerOffset();
     consumerOffsetList.forEach(System.out::println);
-
 
 
     monitor.close();
