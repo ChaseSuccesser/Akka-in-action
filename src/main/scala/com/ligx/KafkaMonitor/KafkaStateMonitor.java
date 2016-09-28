@@ -32,7 +32,7 @@ public class KafkaStateMonitor implements Watcher {
   private void init() {
     try {
       //zk = new ZooKeeper("ukafka-u5qna5-1-bj03.service.ucloud.cn:2181", 500000, this);
-      zk = new ZooKeeper("localhost:2181", 500000, this);
+      zk = new ZooKeeper("10.10.221.163:2181", 500000, this);
 
       if (zk.getState() == States.CONNECTING) {
         try {
@@ -144,6 +144,7 @@ public class KafkaStateMonitor implements Watcher {
         topicPartitionInfo.put(topic, partitionInfo);
       }
     }
+    topicPartitionInfo.remove("__consumer_offsets");
     return topicPartitionInfo;
   }
 
@@ -154,21 +155,21 @@ public class KafkaStateMonitor implements Watcher {
   /**
    * 获取每个ConsumerGroup中的Consumer注册信息
    */
-  public Map<String, Map<String, String>> getGroupConsumerInfo()
+  public Map<String, Map<String, Map<String, String>>> getGroupConsumerInfo()
       throws KeeperException, InterruptedException {
-    Map<String, Map<String, String>> cgConsumersInfo = new HashMap<String, Map<String, String>>();
+    Map<String, Map<String, Map<String, String>>> cgConsumersInfo = new HashMap<>();
 
     List<String> groupIds = zk.getChildren("/consumers", false);
     for (String groupId : groupIds) {
       Stat stat = zk.exists("/consumers/" + groupId + "/ids", false);
       if (stat != null) {
         // 当前Consumer Group下，所有的consumer信息
-        Map<String, String> consumerInfo = new HashMap<String, String>();
+        Map<String, Map<String, String>> consumerInfo = new HashMap<>();
         List<String> consumerIds = zk.getChildren("/consumers/" + groupId + "/ids", false);
         for (String consumerId : consumerIds) {
           byte[] bytes = zk.getData("/consumers/" + groupId + "/ids/" + consumerId, false, null);
           if (bytes.length > 0) {
-            consumerInfo.put(consumerId, new String(bytes));
+            consumerInfo.put(consumerId, JSON.parseObject(new String(bytes), Map.class));
           }
         }
         cgConsumersInfo.put(groupId, consumerInfo);
@@ -222,10 +223,10 @@ public class KafkaStateMonitor implements Watcher {
       throws KeeperException, InterruptedException {
     List<Consumer2Partition> c2pL = new ArrayList<Consumer2Partition>();
 
-    Map<String, Map<String, String>> groupConsumerInfo = getGroupConsumerInfo();
+    Map<String, Map<String, Map<String, String>>> groupConsumerInfo = getGroupConsumerInfo();
     Map<String, Map<String, String>> topicPartitionInfo = getTopicPartitionInfo();
 
-    for (Map.Entry<String, Map<String, String>> cgConsumerME : groupConsumerInfo.entrySet()) {
+    for (Map.Entry<String, Map<String, Map<String, String>>> cgConsumerME : groupConsumerInfo.entrySet()) {
       // 指定Consumer Group下，Consumer的数量
       String groupId = cgConsumerME.getKey();
       double consumerCount = cgConsumerME.getValue().size();
@@ -326,11 +327,11 @@ public class KafkaStateMonitor implements Watcher {
 
     System.out.println("---------------consumer信息---------------");
 
-    Map<String, Map<String, String>> cgConsumersInfo = monitor.getGroupConsumerInfo();
-    for (Map.Entry<String, Map<String, String>> me : cgConsumersInfo.entrySet()) {
+    Map<String, Map<String, Map<String, String>>> cgConsumersInfo = monitor.getGroupConsumerInfo();
+    for (Map.Entry<String, Map<String, Map<String, String>>> me : cgConsumersInfo.entrySet()) {
       System.out.println("消费组: " + me.getKey());
-      for (Map.Entry<String, String> m : me.getValue().entrySet()) {
-        System.out.println(m.getKey() + ":" + m.getValue());
+      for (Map.Entry<String, Map<String, String>> m : me.getValue().entrySet()) {
+        System.out.println(m.getKey() + ":" + JSON.toJSONString(m.getValue()));
       }
     }
 
