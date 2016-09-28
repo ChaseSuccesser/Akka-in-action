@@ -31,7 +31,7 @@ public class KafkaStateMonitor implements Watcher {
 
   private void init() {
     try {
-      //zk = new ZooKeeper("ukafka-u5qna5-1-bj03.service.ucloud.cn:2181", 500000, this);
+//      zk = new ZooKeeper("ukafka-u5qna5-1-bj03.service.ucloud.cn:2181", 500000, this);
       zk = new ZooKeeper("10.10.221.163:2181", 500000, this);
 
       if (zk.getState() == States.CONNECTING) {
@@ -183,12 +183,55 @@ public class KafkaStateMonitor implements Watcher {
   }
 
   /**
+   * /consumers/[groupId]/owners/[topic]/[partitionId] -> consumerIdString + threadId索引编号
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
+  private List<String> getTopicPartitionOwner() throws KeeperException, InterruptedException {
+    // 所有的ConsumerGroup
+    List<String> groupIds = zk.getChildren("/consumers", false);
+    // 所有的topic
+    Set<String> topics = getTopicInfo().keySet();
+
+    List<String> result = new ArrayList<>();
+
+    for(String groupId : groupIds){
+      for(String topic : topics){
+        if(zk.exists("/consumers/" + groupId + "/owners/" + topic, false) == null){
+          continue;
+        }
+        List<String> partitions = zk.getChildren("/consumers/" + groupId + "/owners/" + topic, false);
+        if(partitions != null){
+          for(String partition : partitions){
+            byte[] bytes = zk.getData("/consumers/" + groupId + "/owners/" + topic + "/" + partition, false, null);
+            if(bytes != null){
+              String consumer = new String(bytes);
+              result.add(String.format("%s - %s - %s - %s", groupId, topic, partition, consumer));
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  public String getTopicPartitionOwnerForApi(){
+    try {
+      List<String> result = getTopicPartitionOwner();
+      return JSON.toJSONString(result, true);
+    } catch (KeeperException | InterruptedException e) {
+      e.printStackTrace();
+    }
+    return "";
+  }
+
+  /**
    * 获取每个Topic下所有Partition中被某个ConsumerGroup中的消费者消费的最大偏移量offset
    */
   private List<GroupTopicMessageOffset> getPartitionOffsetInfo()
       throws KeeperException, InterruptedException {
     List<GroupTopicMessageOffset> topicPartitionMessageOffsetInfo = new ArrayList<GroupTopicMessageOffset>();
-    // 所有的Consumer Group
+    // 所有的ConsumerGroup
     List<String> groupIds = zk.getChildren("/consumers", false);
     // 所有的topic
     Set<String> topics = getTopicInfo().keySet();

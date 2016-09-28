@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.ParameterDirectives
 import akka.stream.ActorMaterializer
 import spray.json.DefaultJsonProtocol
 import spray.json._
@@ -81,25 +80,31 @@ object Server extends App{
       }
     } ~
     pathPrefix("kafka") {
-      (path("get_brokers.json") & get) {
+      (path("get_broker.json") & get) {
         val monitor = new KafkaStateMonitor()
         val brokersInfo = monitor.getBrokerInfoForApi()
         monitor.close()
         complete(brokersInfo)
       } ~
-      (path("get_topics.json") & get) {
+      (path("get_topic.json") & get) {
         val monitor = new KafkaStateMonitor()
         val topicsInfo = monitor.getTopicInfoForApi()
         monitor.close()
         complete(topicsInfo)
       } ~
-      (path("get_topic_partitions.json") & get) {
+      (path("get_topic_partition.json") & get) {
         val monitor = new KafkaStateMonitor()
         val topicPartitionsInfo = monitor.getTopicPartitionInfoForApi()
         monitor.close()
         complete(topicPartitionsInfo)
       } ~
-      (path("get_group_consumers.json") & get) {
+      (path("get_topic_partition_owner.json") & get) {
+        val monitor = new KafkaStateMonitor()
+        val topicPartitionOwner = monitor.getTopicPartitionOwnerForApi()
+        monitor.close()
+        complete(topicPartitionOwner)
+      } ~
+      (path("get_group_consumer.json") & get) {
         val monitor = new KafkaStateMonitor()
         val groupConsumersInfo = monitor.getGroupConsumerInfoForApi()
         monitor.close()
