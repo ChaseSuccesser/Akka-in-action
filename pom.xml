@@ -67,12 +67,21 @@
         </dependency>
         <!--Akka end-->
 
+        <!--kafka-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
             <version>0.9.0.1</version>
         </dependency>
 
+        <!--DB-->
+        <dependency>
+            <groupId>com.typesafe.slick</groupId>
+            <artifactId>slick_2.11</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
+        <!--unit test-->
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.11</artifactId>
