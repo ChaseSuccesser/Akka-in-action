@@ -54,12 +54,6 @@
             <version>1.0.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.scala-lang.plugins</groupId>
-            <artifactId>continuations</artifactId>
-            <version>2.9.0.RC3</version>
-        </dependency>
-
         <!--Akka start-->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -132,10 +126,10 @@
         <testSourceDirectory>src/test/scala</testSourceDirectory>
 
         <plugins>
-
             <plugin>
                 <groupId>org.scala-tools</groupId>
                 <artifactId>maven-scala-plugin</artifactId>
+                <version>2.15.1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -151,8 +145,17 @@
                         <arg>-target:jvm-1.8</arg>
                         <arg>-P:continuations:enable</arg>
                     </args>
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <groupId>org.scala-lang.plugins</groupId>
+                            <artifactId>continuations</artifactId>
+                            <version>2.11.0-M7</version>
+                        </compilerPlugin>
+                    </compilerPlugins>
                 </configuration>
             </plugin>
+
+
 
             <!--disable surefire-->
             <plugin>
