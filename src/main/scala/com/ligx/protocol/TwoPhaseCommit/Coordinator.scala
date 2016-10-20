@@ -1,9 +1,8 @@
-package com.ligx.cluster.TwoPhaseCommit
+package com.ligx.protocol.TwoPhaseCommit
 
 import akka.actor.{Actor, PoisonPill, Props}
 import akka.pattern.ask
-import com.ligx.cluster.TwoPhaseCommit.Helper._
-
+import com.ligx.protocol.TwoPhaseCommit.Helper._
 import scala.reflect.ClassTag
 
 /**

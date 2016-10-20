@@ -1,4 +1,4 @@
-package com.ligx.cluster
+package com.ligx.protocol
 
 import akka.actor.{Actor, ActorRef}
 import akka.util.Timeout

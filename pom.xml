@@ -78,6 +78,12 @@
             <artifactId>akka-http-spray-json-experimental_2.11</artifactId>
             <version>2.4.9</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster_2.11</artifactId>
+            <version>2.4.9</version>
+        </dependency>
         <!--Akka end-->
 
         <!--kafka-->
@@ -143,15 +149,15 @@
                     <displayCmd>true</displayCmd>
                     <args>
                         <arg>-target:jvm-1.8</arg>
-                        <arg>-P:continuations:enable</arg>
+                        <!--<arg>-P:continuations:enable</arg>-->
                     </args>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>org.scala-lang.plugins</groupId>
-                            <artifactId>continuations</artifactId>
-                            <version>2.11.0-M7</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
+                    <!--<compilerPlugins>-->
+                        <!--<compilerPlugin>-->
+                            <!--<groupId>org.scala-lang.plugins</groupId>-->
+                            <!--<artifactId>continuations</artifactId>-->
+                            <!--<version>2.11.0-M7</version>-->
+                        <!--</compilerPlugin>-->
+                    <!--</compilerPlugins>-->
                 </configuration>
             </plugin>
 
