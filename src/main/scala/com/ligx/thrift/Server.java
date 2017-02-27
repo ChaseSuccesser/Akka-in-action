@@ -18,7 +18,7 @@ public class Server {
 
             TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
 
-            TProcessor processor = new HelloWorldService.Processor<HelloWorldServiceImpl>(new HelloWorldServiceImpl());
+            TProcessor processor = new HelloWorldService.Processor<>(new HelloWorldServiceImpl());
 
             TNonblockingServer.Args arg = new TNonblockingServer.Args(serverTransport);
             arg.processor(processor);
