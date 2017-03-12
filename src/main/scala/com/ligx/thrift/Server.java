@@ -12,6 +12,7 @@ import org.apache.thrift.transport.TTransportException;
  * Created by Administrator on 2016/7/16.
  */
 public class Server {
+
     public static void main(String[] args) {
         try {
             TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(8080);
@@ -23,11 +24,14 @@ public class Server {
             TNonblockingServer.Args arg = new TNonblockingServer.Args(serverTransport);
             arg.processor(processor);
             arg.protocolFactory(protocolFactory);
+
+            System.out.println("Start server on port 8080");
             TServer server = new TNonblockingServer(arg);
             server.serve();
         } catch (TTransportException e) {
             e.printStackTrace();
         }
     }
+
 }
 
