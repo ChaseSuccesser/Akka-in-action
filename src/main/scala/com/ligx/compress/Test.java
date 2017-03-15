@@ -1,5 +1,6 @@
 package com.ligx.compress;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -77,6 +78,10 @@ public class Test {
             System.out.println("压缩后文件大小: " + endCompressSize);
             System.out.println("压缩时间: " + (endCompressTime - startCompressTime) + " ms");
             System.out.println("压缩率:" + startSize / endCompressSize + "倍");
+
+
+            String encodeValue = Base64.encodeBase64String(compressedBytes);
+            System.out.println("Base64编码后大小: " + encodeValue.getBytes().length);
 
 
             byte[] decompressedBytes = new byte[0];
